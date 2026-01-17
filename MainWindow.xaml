@@ -373,6 +373,23 @@
                         <Ellipse x:Name="FloatingCircle2" Width="100" Height="100" Opacity="0.025" Fill="#e6e095"
                                  HorizontalAlignment="Center" VerticalAlignment="Center" Margin="400,300,0,0"
                                  CacheMode="BitmapCache"/>
+                        <Ellipse x:Name="FloatingCircle3" Width="80" Height="80" Opacity="0.03" Fill="#9a9aed"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center" Margin="250,-200,0,0"
+                                 CacheMode="BitmapCache"/>
+                        <Ellipse x:Name="FloatingCircle4" Width="120" Height="120" Opacity="0.02" Fill="#e6e095"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-300,200,0,0"
+                                 CacheMode="BitmapCache"/>
+                        <Ellipse x:Name="FloatingCircle5" Width="60" Height="60" Opacity="0.04" Fill="#9a9aed"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center" Margin="100,350,0,0"
+                                 CacheMode="BitmapCache"/>
+                        <Ellipse x:Name="FloatingCircle6" Width="90" Height="90" Opacity="0.025" Fill="#e6e095"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-200,-350,0,0"
+                                 CacheMode="BitmapCache"/>
+
+                        <!-- Canvas для фоновых частиц -->
+                        <Canvas x:Name="BackgroundParticles" IsHitTestVisible="False"
+                                Width="{Binding ActualWidth, ElementName=GameCanvas}"
+                                Height="{Binding ActualHeight, ElementName=GameCanvas}"/>
 
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
 
@@ -404,8 +421,6 @@
                             <!-- High Score -->
                             <StackPanel x:Name="HighScorePanel" Orientation="Horizontal" HorizontalAlignment="Center"
                                         Margin="0,0,0,25" Opacity="0">
-                                <Path Data="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.45,13.97L5.82,21L12,17.27Z"
-                                      Fill="#e6e095" Width="14" Height="14" Stretch="Uniform" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                 <TextBlock Text="BEST:" FontSize="12" Foreground="#5a5a6a" VerticalAlignment="Center"/>
                                 <TextBlock x:Name="HighScoreText" Text="0" FontSize="12" FontWeight="Bold"
                                                                                       Foreground="#e6e095" VerticalAlignment="Center" Margin="5,0,0,0"/>

@@ -243,6 +243,18 @@ namespace obzvontool
 
         #region Menu Animations
 
+        private System.Windows.Threading.DispatcherTimer? _backgroundParticleTimer;
+        private static readonly SolidColorBrush _particlePurpleBrush;
+        private static readonly SolidColorBrush _particleYellowBrush;
+
+        static MainWindow()
+        {
+            _particlePurpleBrush = new SolidColorBrush(Color.FromRgb(154, 154, 237));
+            _particleYellowBrush = new SolidColorBrush(Color.FromRgb(230, 224, 149));
+            _particlePurpleBrush.Freeze();
+            _particleYellowBrush.Freeze();
+        }
+
         private void PlayMenuAnimations()
         {
             // Staggered fade in
@@ -251,14 +263,96 @@ namespace obzvontool
             AnimateFadeIn(GithubBtn, 500);
             AnimateFadeIn(HotkeyHints, 650);
 
-            // Floating circles
-            AnimateFloatingCircle(FloatingCircle1, 25, 20, 5);
-            AnimateFloatingCircle(FloatingCircle2, -20, -25, 6);
+            // Floating circles - smooth 60fps GPU-accelerated
+            AnimateFloatingCircle(FloatingCircle1, 35, 30, 4);
+            AnimateFloatingCircle(FloatingCircle2, -30, -35, 5);
+            AnimateFloatingCircle(FloatingCircle3, 25, -20, 3.5);
+            AnimateFloatingCircle(FloatingCircle4, -20, 30, 4.5);
+            AnimateFloatingCircle(FloatingCircle5, 15, 25, 3);
+            AnimateFloatingCircle(FloatingCircle6, -25, -15, 5.5);
 
             // Gradient orbs animation
-            AnimateGradientOrb(GradientOrb1, 40, 30, 8, 0.04, 0.06);
-            AnimateGradientOrb(GradientOrb2, -35, -25, 10, 0.03, 0.05);
-            AnimateGradientOrb(GradientOrb3, 30, -20, 9, 0.025, 0.04);
+            AnimateGradientOrb(GradientOrb1, 60, 50, 6, 0.04, 0.08);
+            AnimateGradientOrb(GradientOrb2, -50, -40, 7, 0.03, 0.07);
+            AnimateGradientOrb(GradientOrb3, 45, -35, 5, 0.025, 0.06);
+
+            // Start background particle system
+            StartBackgroundParticles();
+        }
+
+        private void StartBackgroundParticles()
+        {
+            StopBackgroundParticles();
+
+            _backgroundParticleTimer = new System.Windows.Threading.DispatcherTimer(System.Windows.Threading.DispatcherPriority.Render)
+            {
+                Interval = TimeSpan.FromMilliseconds(600)
+            };
+            _backgroundParticleTimer.Tick += (s, e) => SpawnBackgroundParticle();
+            _backgroundParticleTimer.Start();
+
+            // Spawn initial particles
+            for (int i = 0; i < 10; i++)
+            {
+                SpawnBackgroundParticle(true);
+            }
+        }
+
+        private void StopBackgroundParticles()
+        {
+            _backgroundParticleTimer?.Stop();
+            _backgroundParticleTimer = null;
+            BackgroundParticles.Children.Clear();
+        }
+
+        private void SpawnBackgroundParticle(bool instant = false)
+        {
+            if (BackgroundParticles.ActualWidth < 1 || BackgroundParticles.ActualHeight < 1) return;
+
+            var size = _random.Next(3, 8);
+            var startX = _random.NextDouble() * BackgroundParticles.ActualWidth;
+            var startY = _random.NextDouble() * BackgroundParticles.ActualHeight;
+
+            var transform = new TranslateTransform(startX, startY);
+            var particle = new Ellipse
+            {
+                Width = size,
+                Height = size,
+                Fill = _random.Next(2) == 0 ? _particlePurpleBrush : _particleYellowBrush,
+                Opacity = 0,
+                RenderTransform = transform,
+                CacheMode = new BitmapCache { EnableClearType = false, SnapsToDevicePixels = false }
+            };
+
+            BackgroundParticles.Children.Add(particle);
+
+            var durationSec = _random.Next(8, 15);
+            var duration = TimeSpan.FromSeconds(durationSec);
+            var delay = instant ? TimeSpan.Zero : TimeSpan.FromMilliseconds(_random.Next(0, 300));
+            var targetOpacity = _random.NextDouble() * 0.15 + 0.05;
+
+            // GPU-accelerated movement via RenderTransform
+            var moveY = new DoubleAnimation(startY, startY - _random.Next(100, 250), duration)
+            {
+                BeginTime = delay
+            };
+            var moveX = new DoubleAnimation(startX, startX + _random.Next(-80, 80), duration)
+            {
+                BeginTime = delay
+            };
+
+            // Smooth fade
+            var fade = new DoubleAnimationUsingKeyFrames();
+            fade.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromTimeSpan(delay)));
+            fade.KeyFrames.Add(new LinearDoubleKeyFrame(targetOpacity, KeyTime.FromTimeSpan(delay + TimeSpan.FromSeconds(1.5))));
+            fade.KeyFrames.Add(new LinearDoubleKeyFrame(targetOpacity, KeyTime.FromTimeSpan(delay + duration - TimeSpan.FromSeconds(2))));
+            fade.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromTimeSpan(delay + duration)));
+
+            fade.Completed += (s, e) => BackgroundParticles.Children.Remove(particle);
+
+            transform.BeginAnimation(TranslateTransform.XProperty, moveX);
+            transform.BeginAnimation(TranslateTransform.YProperty, moveY);
+            particle.BeginAnimation(OpacityProperty, fade);
         }
 
         private void AnimateFadeIn(UIElement element, int delayMs)
@@ -273,24 +367,23 @@ namespace obzvontool
 
         private void AnimateFloatingCircle(Ellipse circle, double deltaX, double deltaY, double seconds)
         {
-            var transform = new TranslateTransform();
+            var transform = circle.RenderTransform as TranslateTransform ?? new TranslateTransform();
             circle.RenderTransform = transform;
 
             var xAnim = new DoubleAnimation(0, deltaX, TimeSpan.FromSeconds(seconds))
             {
                 AutoReverse = true,
-                RepeatBehavior = RepeatBehavior.Forever,
-                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
+                RepeatBehavior = RepeatBehavior.Forever
             };
             var yAnim = new DoubleAnimation(0, deltaY, TimeSpan.FromSeconds(seconds * 0.85))
             {
                 AutoReverse = true,
-                RepeatBehavior = RepeatBehavior.Forever,
-                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
+                RepeatBehavior = RepeatBehavior.Forever
             };
 
-            Timeline.SetDesiredFrameRate(xAnim, 120);
-            Timeline.SetDesiredFrameRate(yAnim, 120);
+            // Max FPS - null means unlimited, uses monitor refresh rate
+            Timeline.SetDesiredFrameRate(xAnim, null);
+            Timeline.SetDesiredFrameRate(yAnim, null);
 
             transform.BeginAnimation(TranslateTransform.XProperty, xAnim);
             transform.BeginAnimation(TranslateTransform.YProperty, yAnim);
@@ -298,34 +391,29 @@ namespace obzvontool
 
         private void AnimateGradientOrb(Ellipse orb, double deltaX, double deltaY, double seconds, double minOpacity, double maxOpacity)
         {
-            var transform = new TranslateTransform();
+            var transform = orb.RenderTransform as TranslateTransform ?? new TranslateTransform();
             orb.RenderTransform = transform;
 
-            // Movement animation
             var xAnim = new DoubleAnimation(0, deltaX, TimeSpan.FromSeconds(seconds))
             {
                 AutoReverse = true,
-                RepeatBehavior = RepeatBehavior.Forever,
-                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
+                RepeatBehavior = RepeatBehavior.Forever
             };
             var yAnim = new DoubleAnimation(0, deltaY, TimeSpan.FromSeconds(seconds * 1.2))
             {
                 AutoReverse = true,
-                RepeatBehavior = RepeatBehavior.Forever,
-                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
+                RepeatBehavior = RepeatBehavior.Forever
             };
-
-            // Opacity pulse
             var opacityAnim = new DoubleAnimation(minOpacity, maxOpacity, TimeSpan.FromSeconds(seconds * 0.7))
             {
                 AutoReverse = true,
-                RepeatBehavior = RepeatBehavior.Forever,
-                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
+                RepeatBehavior = RepeatBehavior.Forever
             };
 
-            Timeline.SetDesiredFrameRate(xAnim, 60);
-            Timeline.SetDesiredFrameRate(yAnim, 60);
-            Timeline.SetDesiredFrameRate(opacityAnim, 60);
+            // Max FPS
+            Timeline.SetDesiredFrameRate(xAnim, null);
+            Timeline.SetDesiredFrameRate(yAnim, null);
+            Timeline.SetDesiredFrameRate(opacityAnim, null);
 
             transform.BeginAnimation(TranslateTransform.XProperty, xAnim);
             transform.BeginAnimation(TranslateTransform.YProperty, yAnim);
@@ -419,6 +507,7 @@ namespace obzvontool
             ResultScreen.BeginAnimation(OpacityProperty, fadeOut);
 
             ClearTargets();
+            StopBackgroundParticles();
 
             _isPlaying = true;
             _spawnTimer.Start();

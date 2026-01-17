@@ -13,6 +13,7 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <PublishDir>$(ProjectDir)db\</PublishDir>
   </PropertyGroup>
 
 
@@ -20,9 +21,5 @@
     <Resource Include="MuseoSans_900.otf" />
   </ItemGroup>
 
-  <Target Name="CopyToDb" AfterTargets="Publish">
-    <MakeDir Directories="$(ProjectDir)db" />
-    <Copy SourceFiles="$(PublishDir)obzvontool.exe" DestinationFolder="$(ProjectDir)db" />
-  </Target>
 
 </Project>
