@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>obzvontool</AssemblyName>
+    <RootNamespace>obzvontool</RootNamespace>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <Resource Include="MuseoSans_900.otf" />
+  </ItemGroup>
+
+  <Target Name="CopyToDb" AfterTargets="Publish">
+    <MakeDir Directories="$(ProjectDir)db" />
+    <Copy SourceFiles="$(PublishDir)obzvontool.exe" DestinationFolder="$(ProjectDir)db" />
+  </Target>
+
+</Project>
