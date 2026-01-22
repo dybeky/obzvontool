@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback } from 'react';
 
-function SettingsModal({ isOpen, onClose, gradientSpeed, setGradientSpeed }) {
+function SettingsModal({ isOpen, onClose }) {
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Escape') {
       onClose();
@@ -14,7 +14,7 @@ function SettingsModal({ isOpen, onClose, gradientSpeed, setGradientSpeed }) {
   }, [onClose]);
 
   const handleGitHubClick = () => {
-    window.electronAPI?.openExternal('https://github.com/yourusername/obzvon');
+    window.electronAPI?.openExternal('https://github.com/dybeky/obzvontool');
   };
 
   useEffect(() => {
@@ -25,24 +25,6 @@ function SettingsModal({ isOpen, onClose, gradientSpeed, setGradientSpeed }) {
   }, [isOpen, handleKeyDown]);
 
   if (!isOpen) return null;
-
-  const speedLabels = {
-    1: 'ULTRA',
-    2: 'FAST',
-    3: 'QUICK',
-    4: 'NORMAL',
-    6: 'SLOW',
-    8: 'CHILL'
-  };
-
-  const getSpeedLabel = (speed) => {
-    if (speed <= 1) return 'ULTRA';
-    if (speed <= 2) return 'FAST';
-    if (speed <= 3) return 'QUICK';
-    if (speed <= 4) return 'NORMAL';
-    if (speed <= 6) return 'SLOW';
-    return 'CHILL';
-  };
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
@@ -56,28 +38,6 @@ function SettingsModal({ isOpen, onClose, gradientSpeed, setGradientSpeed }) {
         <h2 className="gradient-text">SETTINGS</h2>
 
         <div className="settings-content">
-          <div className="settings-item">
-            <span className="settings-label">Gradient Speed</span>
-            <span className="settings-value">{getSpeedLabel(gradientSpeed)}</span>
-          </div>
-          <div className="settings-slider-container">
-            <input
-              type="range"
-              min="1"
-              max="8"
-              step="0.5"
-              value={gradientSpeed}
-              onChange={(e) => setGradientSpeed(parseFloat(e.target.value))}
-              className="settings-slider"
-            />
-            <div className="slider-labels">
-              <span>FAST</span>
-              <span>SLOW</span>
-            </div>
-          </div>
-
-          <div className="settings-divider" />
-
           <div className="settings-item">
             <span className="settings-label">Version</span>
             <span className="settings-value">v1.0.0</span>

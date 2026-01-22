@@ -33,7 +33,7 @@ function App() {
     totalMisses: 0,
     gamesPlayed: 0
   });
-  const [gradientSpeed, setGradientSpeed] = useState(2); // seconds (FAST)
+  const [gradientSpeed] = useState(1); // seconds (ULTRA)
 
   // Apply gradient speed to CSS variable
   useEffect(() => {
@@ -188,12 +188,7 @@ function App() {
         )}
       </div>
 
-      <SettingsModal
-        isOpen={settingsOpen}
-        onClose={closeSettings}
-        gradientSpeed={gradientSpeed}
-        setGradientSpeed={setGradientSpeed}
-      />
+      <SettingsModal isOpen={settingsOpen} onClose={closeSettings} />
 
       {updateRequired && updateInfo && (
         <UpdateModal
