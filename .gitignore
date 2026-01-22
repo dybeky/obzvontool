@@ -1,40 +1,35 @@
-# Build results
-bin/
-obj/
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-electron/
+out/
+
+# Vite
+*.local
+
+# Database
+db/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
 
 # Claude
 .claude/
 
-# Output
-db/
-[Dd]ebug/
-[Rr]elease/
-x64/
-x86/
-
-# Visual Studio
-.vs/
-*.user
-*.userosscache
-*.suo
-*.cache
-*.vsidx
-*.lock.json
-
-# Rider
-.idea/
-
-# NuGet
-*.nupkg
-packages/
-
-# Windows
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-
-# VS Code
-.vscode/
-
-# Publish output (keep db folder but ignore exe for commits)
-# db/
+# Env files
+.env
+.env.local
+.env.*.local
