@@ -1,7 +1,8 @@
 {
   "name": "obzvontool",
   "version": "1.0.0",
-  "description": "OBZVON. - Aim Trainer by COBRA",
+  "description": "OBZVON.",
+  "author": "Paulus Platov",
   "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
@@ -11,8 +12,9 @@
     "dist": "vite build && electron-builder"
   },
   "build": {
-    "appId": "com.obzvontool.aimtrainer",
+    "appId": "com.cobra.obzvon",
     "productName": "OBZVON",
+    "icon": "obzvonico.ico",
     "directories": {
       "output": "dist-electron"
     },
@@ -21,11 +23,12 @@
       "dist/**/*"
     ],
     "win": {
-      "target": "nsis"
+      "target": "portable",
+      "icon": "obzvonico.ico",
+      "signAndEditExecutable": false
     },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+    "portable": {
+      "artifactName": "OBZVON.exe"
     }
   },
   "devDependencies": {

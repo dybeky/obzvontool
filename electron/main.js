@@ -12,25 +12,20 @@ const store = new Store({
   }
 });
 
-// GitHub repo info for update checking
-const GITHUB_OWNER = 'cobra';
-const GITHUB_REPO = 'obzvon';
+// GitHub repo info
+const GITHUB_OWNER = 'dybeky';
+const GITHUB_REPO = 'obzvontool';
 
 let mainWindow;
 let updateInfo = null;
 const isDev = process.env.NODE_ENV !== 'production' && !app.isPackaged;
 
-// Get current version from package.json
+// Get current version
 function getCurrentVersion() {
-  try {
-    const packageJson = require('../package.json');
-    return packageJson.version;
-  } catch {
-    return '1.0.0';
-  }
+  return app.getVersion();
 }
 
-// Compare semver versions
+// Compare semver versions - returns true if latest > current
 function compareVersions(current, latest) {
   const currentParts = current.replace(/^v/, '').split('.').map(Number);
   const latestParts = latest.replace(/^v/, '').split('.').map(Number);
@@ -44,7 +39,7 @@ function compareVersions(current, latest) {
   return false;
 }
 
-// Check for updates via GitHub API
+// Check for updates via GitHub API (no latest.yml needed)
 function checkForUpdates() {
   return new Promise((resolve) => {
     const options = {
@@ -72,18 +67,22 @@ function checkForUpdates() {
             const currentVersion = getCurrentVersion();
             const needsUpdate = compareVersions(currentVersion, latestVersion);
 
+            // Find .exe asset for download
+            const exeAsset = release.assets?.find(a => a.name.endsWith('.exe'));
+
             updateInfo = {
               currentVersion,
               latestVersion,
               needsUpdate,
               releaseUrl: release.html_url,
+              downloadUrl: exeAsset?.browser_download_url || release.html_url,
               releaseName: release.name,
               releaseBody: release.body
             };
 
             resolve(updateInfo);
           } else {
-            // API error or rate limit - allow app to run
+            // API error or no releases yet - allow app to run
             resolve({
               currentVersion: getCurrentVersion(),
               latestVersion: getCurrentVersion(),
@@ -135,6 +134,7 @@ function createWindow() {
     frame: false,
     transparent: false,
     backgroundColor: '#0a0a0f',
+    icon: path.join(__dirname, '../obzvonico.ico'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -242,9 +242,10 @@ ipcMain.handle('get-update-info', () => {
   };
 });
 
+// Opens download page or direct .exe link
 ipcMain.on('download-update', () => {
-  if (updateInfo?.releaseUrl) {
-    shell.openExternal(updateInfo.releaseUrl);
+  if (updateInfo?.downloadUrl) {
+    shell.openExternal(updateInfo.downloadUrl);
   } else {
     shell.openExternal(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`);
   }
