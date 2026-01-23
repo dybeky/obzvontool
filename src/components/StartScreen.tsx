@@ -1,10 +1,19 @@
 import React from 'react';
 import AnimatedBackground from './AnimatedBackground';
+import type { Difficulty, SavedStats } from '../types';
 
-const DIFFICULTIES = ['EASY', 'MEDIUM', 'HARD'];
+const DIFFICULTIES: Difficulty[] = ['EASY', 'MEDIUM', 'HARD'];
 
-function StartScreen({ difficulty, setDifficulty, onStart, savedStats, onOpenSettings }) {
-  const handleGitHubClick = () => {
+interface StartScreenProps {
+  difficulty: Difficulty;
+  setDifficulty: (difficulty: Difficulty) => void;
+  onStart: () => void;
+  savedStats: SavedStats;
+  onOpenSettings: () => void;
+}
+
+function StartScreen({ difficulty, setDifficulty, onStart, savedStats, onOpenSettings }: StartScreenProps): React.ReactElement {
+  const handleGitHubClick = (): void => {
     window.electronAPI?.openExternal('https://github.com/yourusername/obzvon');
   };
 

@@ -1,19 +1,24 @@
 import React, { useEffect, useCallback } from 'react';
 
-function SettingsModal({ isOpen, onClose }) {
-  const handleKeyDown = useCallback((e) => {
+interface SettingsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+function SettingsModal({ isOpen, onClose }: SettingsModalProps): React.ReactElement | null {
+  const handleKeyDown = useCallback((e: KeyboardEvent): void => {
     if (e.key === 'Escape') {
       onClose();
     }
   }, [onClose]);
 
-  const handleOverlayClick = useCallback((e) => {
+  const handleOverlayClick = useCallback((e: React.MouseEvent<HTMLDivElement>): void => {
     if (e.target === e.currentTarget) {
       onClose();
     }
   }, [onClose]);
 
-  const handleGitHubClick = () => {
+  const handleGitHubClick = (): void => {
     window.electronAPI?.openExternal('https://github.com/dybeky/obzvontool');
   };
 

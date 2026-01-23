@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 
-function TitleBar() {
+function TitleBar(): React.ReactElement {
   const [isMaximized, setIsMaximized] = useState(false);
 
   useEffect(() => {
-    const checkMaximized = async () => {
+    const checkMaximized = async (): Promise<void> => {
       if (window.electronAPI) {
         const maximized = await window.electronAPI.isMaximized();
         setIsMaximized(maximized);
@@ -16,13 +16,13 @@ function TitleBar() {
     return () => window.removeEventListener('resize', checkMaximized);
   }, []);
 
-  const handleMinimize = () => window.electronAPI?.minimize();
-  const handleMaximize = async () => {
+  const handleMinimize = (): void => window.electronAPI?.minimize();
+  const handleMaximize = async (): Promise<void> => {
     window.electronAPI?.maximize();
     const maximized = await window.electronAPI?.isMaximized();
-    setIsMaximized(maximized);
+    setIsMaximized(maximized ?? false);
   };
-  const handleClose = () => window.electronAPI?.close();
+  const handleClose = (): void => window.electronAPI?.close();
 
   return (
     <div className="title-bar">

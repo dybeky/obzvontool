@@ -5,44 +5,43 @@ import GameCanvas from './components/GameCanvas';
 import ResultScreen from './components/ResultScreen';
 import SettingsModal from './components/SettingsModal';
 import UpdateModal from './components/UpdateModal';
+import type { GameState, Difficulty, DifficultySettings, GameStats, SavedStats, UpdateInfo } from './types';
 
-const DIFFICULTY_SETTINGS = {
+const DIFFICULTY_SETTINGS: Record<Difficulty, DifficultySettings> = {
   EASY: { targetSize: 85, spawnInterval: 650, lifetime: 1400 },
   MEDIUM: { targetSize: 70, spawnInterval: 480, lifetime: 1100 },
   HARD: { targetSize: 55, spawnInterval: 350, lifetime: 800 }
 };
 
-const GAME_DURATION = 30000; // 30 seconds
+const GAME_DURATION = 30000;
 
-function App() {
-  const [gameState, setGameState] = useState('start'); // start, playing, paused, result
-  const [difficulty, setDifficulty] = useState('MEDIUM');
+function App(): React.ReactElement {
+  const [gameState, setGameState] = useState<GameState>('start');
+  const [difficulty, setDifficulty] = useState<Difficulty>('MEDIUM');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [updateRequired, setUpdateRequired] = useState(false);
-  const [updateInfo, setUpdateInfo] = useState(null);
-  const [stats, setStats] = useState({
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [stats, setStats] = useState<GameStats>({
     score: 0,
     hits: 0,
     misses: 0,
     combo: 0,
     maxCombo: 0
   });
-  const [savedStats, setSavedStats] = useState({
+  const [savedStats, setSavedStats] = useState<SavedStats>({
     highScore: 0,
     totalHits: 0,
     totalMisses: 0,
     gamesPlayed: 0
   });
-  const [gradientSpeed] = useState(1); // seconds (ULTRA)
+  const [gradientSpeed] = useState(1);
 
-  // Apply gradient speed to CSS variable
   useEffect(() => {
     document.documentElement.style.setProperty('--gradient-speed', `${gradientSpeed}s`);
   }, [gradientSpeed]);
 
-  // Check for updates on mount
   useEffect(() => {
-    const checkUpdates = async () => {
+    const checkUpdates = async (): Promise<void> => {
       if (window.electronAPI?.checkForUpdates) {
         const info = await window.electronAPI.checkForUpdates();
         setUpdateInfo(info);
@@ -54,9 +53,8 @@ function App() {
     checkUpdates();
   }, []);
 
-  // Load saved stats on mount
   useEffect(() => {
-    const loadStats = async () => {
+    const loadStats = async (): Promise<void> => {
       if (window.electronAPI) {
         const loaded = await window.electronAPI.getStats();
         setSavedStats(loaded);
@@ -65,10 +63,57 @@ function App() {
     loadStats();
   }, []);
 
-  // Keyboard shortcuts
+  const startGame = useCallback((): void => {
+    if (updateRequired) return;
+    setStats({ score: 0, hits: 0, misses: 0, combo: 0, maxCombo: 0 });
+    setGameState('playing');
+  }, [updateRequired]);
+
+  const endGame = useCallback(async (): Promise<void> => {
+    setGameState('result');
+
+    if (window.electronAPI) {
+      const isNewHigh = await window.electronAPI.updateHighScore(stats.score);
+
+      const newSavedStats: SavedStats = {
+        highScore: isNewHigh ? stats.score : savedStats.highScore,
+        totalHits: savedStats.totalHits + stats.hits,
+        totalMisses: savedStats.totalMisses + stats.misses,
+        gamesPlayed: savedStats.gamesPlayed + 1
+      };
+
+      await window.electronAPI.saveStats(newSavedStats);
+      setSavedStats(newSavedStats);
+    }
+  }, [stats, savedStats]);
+
+  const backToStart = useCallback((): void => {
+    setGameState('start');
+    setStats({ score: 0, hits: 0, misses: 0, combo: 0, maxCombo: 0 });
+  }, []);
+
+  const updateStats = useCallback((newStats: Partial<GameStats>): void => {
+    setStats(prev => ({ ...prev, ...newStats }));
+  }, []);
+
+  const openSettings = useCallback((): void => {
+    setSettingsOpen(true);
+  }, []);
+
+  const closeSettings = useCallback((): void => {
+    setSettingsOpen(false);
+  }, []);
+
+  const handleUpdate = useCallback((): void => {
+    window.electronAPI?.downloadUpdate();
+  }, []);
+
+  const handleExit = useCallback((): void => {
+    window.electronAPI?.quitApp();
+  }, []);
+
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Block keyboard shortcuts if update is required
+    const handleKeyDown = (e: KeyboardEvent): void => {
       if (updateRequired) return;
 
       if (e.key === 'F11') {
@@ -100,58 +145,7 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameState, settingsOpen, updateRequired]);
-
-  const startGame = useCallback(() => {
-    if (updateRequired) return;
-    setStats({ score: 0, hits: 0, misses: 0, combo: 0, maxCombo: 0 });
-    setGameState('playing');
-  }, [updateRequired]);
-
-  const endGame = useCallback(async () => {
-    setGameState('result');
-
-    if (window.electronAPI) {
-      // Update high score
-      const isNewHigh = await window.electronAPI.updateHighScore(stats.score);
-
-      // Update cumulative stats
-      const newSavedStats = {
-        highScore: isNewHigh ? stats.score : savedStats.highScore,
-        totalHits: savedStats.totalHits + stats.hits,
-        totalMisses: savedStats.totalMisses + stats.misses,
-        gamesPlayed: savedStats.gamesPlayed + 1
-      };
-
-      await window.electronAPI.saveStats(newSavedStats);
-      setSavedStats(newSavedStats);
-    }
-  }, [stats, savedStats]);
-
-  const backToStart = useCallback(() => {
-    setGameState('start');
-    setStats({ score: 0, hits: 0, misses: 0, combo: 0, maxCombo: 0 });
-  }, []);
-
-  const updateStats = useCallback((newStats) => {
-    setStats(prev => ({ ...prev, ...newStats }));
-  }, []);
-
-  const openSettings = useCallback(() => {
-    setSettingsOpen(true);
-  }, []);
-
-  const closeSettings = useCallback(() => {
-    setSettingsOpen(false);
-  }, []);
-
-  const handleUpdate = useCallback(() => {
-    window.electronAPI?.downloadUpdate();
-  }, []);
-
-  const handleExit = useCallback(() => {
-    window.electronAPI?.quitApp();
-  }, []);
+  }, [gameState, settingsOpen, updateRequired, startGame, endGame, backToStart]);
 
   return (
     <div className="app">

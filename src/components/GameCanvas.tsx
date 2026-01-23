@@ -1,26 +1,43 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import HUD from './HUD';
 import Target from './Target';
+import type { Target as TargetType, Effect, GameStats, DifficultySettings } from '../types';
 
-function GameCanvas({ settings, duration, stats, updateStats, isPaused, onGameEnd }) {
-  const [targets, setTargets] = useState([]);
-  const [effects, setEffects] = useState([]);
+interface GameCanvasProps {
+  settings: DifficultySettings;
+  duration: number;
+  stats: GameStats;
+  updateStats: (stats: Partial<GameStats>) => void;
+  isPaused: boolean;
+  onGameEnd: () => void;
+}
+
+function GameCanvas({ settings, duration, stats, updateStats, isPaused, onGameEnd }: GameCanvasProps): React.ReactElement {
+  const [targets, setTargets] = useState<TargetType[]>([]);
+  const [effects, setEffects] = useState<Effect[]>([]);
   const [timeLeft, setTimeLeft] = useState(duration);
-  const canvasRef = useRef(null);
-  const spawnIntervalRef = useRef(null);
-  const gameTimerRef = useRef(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const spawnIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const gameTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const targetIdRef = useRef(0);
 
-  // Calculate score based on reaction time
-  const calculateScore = (reactionTime) => {
+  const calculateScore = (reactionTime: number): number => {
     if (reactionTime < 200) return 50;
     if (reactionTime < 400) return 35;
     if (reactionTime < 700) return 22;
     return 12;
   };
 
-  // Spawn a new target
-  const spawnTarget = useCallback(() => {
+  const addEffect = useCallback((x: number, y: number, type: 'hit' | 'miss', score = 0): void => {
+    const effectId = Date.now() + Math.random();
+    setEffects(prev => [...prev, { id: effectId, x, y, type, score }]);
+
+    setTimeout(() => {
+      setEffects(prev => prev.filter(e => e.id !== effectId));
+    }, 500);
+  }, []);
+
+  const spawnTarget = useCallback((): void => {
     if (isPaused) return;
 
     const canvas = canvasRef.current;
@@ -31,7 +48,7 @@ function GameCanvas({ settings, duration, stats, updateStats, isPaused, onGameEn
     const x = padding + Math.random() * (rect.width - padding * 2);
     const y = padding + Math.random() * (rect.height - padding * 2);
 
-    const newTarget = {
+    const newTarget: TargetType = {
       id: targetIdRef.current++,
       x,
       y,
@@ -42,12 +59,10 @@ function GameCanvas({ settings, duration, stats, updateStats, isPaused, onGameEn
 
     setTargets(prev => [...prev, newTarget]);
 
-    // Auto-remove target after lifetime (miss)
     setTimeout(() => {
       setTargets(prev => {
         const target = prev.find(t => t.id === newTarget.id);
         if (target) {
-          // Target expired - it's a miss
           updateStats({
             misses: stats.misses + 1,
             combo: 0
@@ -58,20 +73,9 @@ function GameCanvas({ settings, duration, stats, updateStats, isPaused, onGameEn
         return prev;
       });
     }, settings.lifetime);
-  }, [settings, isPaused, stats.misses, updateStats]);
+  }, [settings, isPaused, stats.misses, updateStats, addEffect]);
 
-  // Add visual effect
-  const addEffect = useCallback((x, y, type, score = 0) => {
-    const effectId = Date.now() + Math.random();
-    setEffects(prev => [...prev, { id: effectId, x, y, type, score }]);
-
-    setTimeout(() => {
-      setEffects(prev => prev.filter(e => e.id !== effectId));
-    }, 500);
-  }, []);
-
-  // Handle target click (hit)
-  const handleTargetClick = useCallback((target, e) => {
+  const handleTargetClick = useCallback((target: TargetType, e: React.MouseEvent): void => {
     e.stopPropagation();
 
     const reactionTime = Date.now() - target.spawnTime;
@@ -92,11 +96,13 @@ function GameCanvas({ settings, duration, stats, updateStats, isPaused, onGameEn
     addEffect(target.x, target.y, 'hit', finalScore);
   }, [stats, updateStats, addEffect]);
 
-  // Handle canvas click (miss)
-  const handleCanvasClick = useCallback((e) => {
+  const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLDivElement>): void => {
     if (isPaused) return;
 
-    const rect = canvasRef.current.getBoundingClientRect();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
@@ -108,11 +114,10 @@ function GameCanvas({ settings, duration, stats, updateStats, isPaused, onGameEn
     addEffect(x, y, 'miss');
   }, [isPaused, stats.misses, updateStats, addEffect]);
 
-  // Start/stop spawn interval
   useEffect(() => {
     if (!isPaused) {
       spawnIntervalRef.current = setInterval(spawnTarget, settings.spawnInterval);
-      spawnTarget(); // Spawn first target immediately
+      spawnTarget();
     }
 
     return () => {
@@ -122,7 +127,6 @@ function GameCanvas({ settings, duration, stats, updateStats, isPaused, onGameEn
     };
   }, [isPaused, settings.spawnInterval, spawnTarget]);
 
-  // Game timer
   useEffect(() => {
     if (!isPaused) {
       gameTimerRef.current = setInterval(() => {
@@ -181,7 +185,7 @@ function GameCanvas({ settings, duration, stats, updateStats, isPaused, onGameEn
                 <span className="score-popup">+{effect.score}</span>
                 <div className="particles">
                   {[...Array(8)].map((_, i) => (
-                    <div key={i} className="particle" style={{ '--angle': `${i * 45}deg` }} />
+                    <div key={i} className="particle" style={{ '--angle': `${i * 45}deg` } as React.CSSProperties} />
                   ))}
                 </div>
               </>

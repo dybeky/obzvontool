@@ -1,6 +1,14 @@
 import React from 'react';
 
-function HUD({ score, accuracy, combo, timeLeft, duration }) {
+interface HUDProps {
+  score: number;
+  accuracy: number;
+  combo: number;
+  timeLeft: number;
+  duration: number;
+}
+
+function HUD({ score, accuracy, combo, timeLeft, duration }: HUDProps): React.ReactElement {
   const timeSeconds = Math.ceil(timeLeft / 1000);
   const timeProgress = (timeLeft / duration) * 100;
 

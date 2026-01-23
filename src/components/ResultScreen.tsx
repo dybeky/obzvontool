@@ -1,7 +1,15 @@
 import React from 'react';
 import AnimatedBackground from './AnimatedBackground';
+import type { GameStats, SavedStats } from '../types';
 
-function ResultScreen({ stats, savedStats, onRestart, onBack }) {
+interface ResultScreenProps {
+  stats: GameStats;
+  savedStats: SavedStats;
+  onRestart: () => void;
+  onBack: () => void;
+}
+
+function ResultScreen({ stats, savedStats, onRestart, onBack }: ResultScreenProps): React.ReactElement {
   const accuracy = stats.hits + stats.misses > 0
     ? Math.round((stats.hits / (stats.hits + stats.misses)) * 100)
     : 0;

@@ -1,8 +1,37 @@
 import React, { useMemo } from 'react';
 
-function AnimatedBackground() {
-  const blobs = useMemo(() => {
-    const items = [];
+interface Blob {
+  id: number;
+  size: number;
+  left: number;
+  top: number;
+  duration: number;
+  delay: number;
+  gradientClass: string;
+}
+
+interface Particle {
+  id: number;
+  left: number;
+  duration: number;
+  delay: number;
+  size: number;
+}
+
+interface Orb {
+  id: number;
+  left: number;
+  top: number;
+  size: number;
+  color: string;
+  pulseDuration: number;
+  driftDuration: number;
+  delay: number;
+}
+
+function AnimatedBackground(): React.ReactElement {
+  const blobs = useMemo<Blob[]>(() => {
+    const items: Blob[] = [];
     const count = 6;
 
     for (let i = 0; i < count; i++) {
@@ -27,8 +56,8 @@ function AnimatedBackground() {
     return items;
   }, []);
 
-  const particles = useMemo(() => {
-    const items = [];
+  const particles = useMemo<Particle[]>(() => {
+    const items: Particle[] = [];
     const count = 25;
 
     for (let i = 0; i < count; i++) {
@@ -44,8 +73,8 @@ function AnimatedBackground() {
     return items;
   }, []);
 
-  const orbs = useMemo(() => {
-    const items = [];
+  const orbs = useMemo<Orb[]>(() => {
+    const items: Orb[] = [];
     const count = 8;
     const colors = [
       'rgba(235, 110, 101, 0.8)',

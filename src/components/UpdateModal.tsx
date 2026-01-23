@@ -1,6 +1,13 @@
 import React from 'react';
 
-function UpdateModal({ currentVersion, latestVersion, onUpdate, onExit }) {
+interface UpdateModalProps {
+  currentVersion: string;
+  latestVersion: string;
+  onUpdate: () => void;
+  onExit: () => void;
+}
+
+function UpdateModal({ currentVersion, latestVersion, onUpdate, onExit }: UpdateModalProps): React.ReactElement {
   return (
     <div className="update-modal-overlay">
       <div className="update-modal">

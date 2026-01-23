@@ -1,6 +1,12 @@
 import React from 'react';
+import type { Target as TargetType } from '../types';
 
-function Target({ target, onClick }) {
+interface TargetProps {
+  target: TargetType;
+  onClick: (e: React.MouseEvent<HTMLDivElement>) => void;
+}
+
+function Target({ target, onClick }: TargetProps): React.ReactElement {
   return (
     <div
       className="target"
@@ -10,7 +16,7 @@ function Target({ target, onClick }) {
         width: target.size,
         height: target.size,
         '--lifetime': `${target.lifetime}ms`
-      }}
+      } as React.CSSProperties}
       onClick={onClick}
     >
       <div className="target-outer" />

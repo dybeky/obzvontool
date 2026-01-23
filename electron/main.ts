@@ -1,9 +1,38 @@
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
-const path = require('path');
-const Store = require('electron-store');
-const https = require('https');
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import * as path from 'path';
+import * as https from 'https';
+import Store from 'electron-store';
 
-const store = new Store({
+interface StoreSchema {
+  highScore: number;
+  totalHits: number;
+  totalMisses: number;
+  gamesPlayed: number;
+}
+
+interface UpdateInfo {
+  currentVersion: string;
+  latestVersion: string;
+  needsUpdate: boolean;
+  releaseUrl?: string;
+  downloadUrl?: string;
+  releaseName?: string;
+  releaseBody?: string;
+  error?: string;
+}
+
+interface GitHubRelease {
+  tag_name: string;
+  html_url: string;
+  name: string;
+  body: string;
+  assets?: Array<{
+    name: string;
+    browser_download_url: string;
+  }>;
+}
+
+const store = new Store<StoreSchema>({
   defaults: {
     highScore: 0,
     totalHits: 0,
@@ -12,21 +41,18 @@ const store = new Store({
   }
 });
 
-// GitHub repo info
 const GITHUB_OWNER = 'dybeky';
 const GITHUB_REPO = 'obzvontool';
 
-let mainWindow;
-let updateInfo = null;
+let mainWindow: BrowserWindow | null = null;
+let updateInfo: UpdateInfo | null = null;
 const isDev = process.env.NODE_ENV !== 'production' && !app.isPackaged;
 
-// Get current version
-function getCurrentVersion() {
+function getCurrentVersion(): string {
   return app.getVersion();
 }
 
-// Compare semver versions - returns true if latest > current
-function compareVersions(current, latest) {
+function compareVersions(current: string, latest: string): boolean {
   const currentParts = current.replace(/^v/, '').split('.').map(Number);
   const latestParts = latest.replace(/^v/, '').split('.').map(Number);
 
@@ -39,10 +65,9 @@ function compareVersions(current, latest) {
   return false;
 }
 
-// Check for updates via GitHub API (no latest.yml needed)
-function checkForUpdates() {
+function checkForUpdates(): Promise<UpdateInfo> {
   return new Promise((resolve) => {
-    const options = {
+    const options: https.RequestOptions = {
       hostname: 'api.github.com',
       path: `/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`,
       method: 'GET',
@@ -55,19 +80,18 @@ function checkForUpdates() {
     const req = https.request(options, (res) => {
       let data = '';
 
-      res.on('data', (chunk) => {
+      res.on('data', (chunk: Buffer) => {
         data += chunk;
       });
 
       res.on('end', () => {
         try {
           if (res.statusCode === 200) {
-            const release = JSON.parse(data);
+            const release: GitHubRelease = JSON.parse(data);
             const latestVersion = release.tag_name.replace(/^v/, '');
             const currentVersion = getCurrentVersion();
             const needsUpdate = compareVersions(currentVersion, latestVersion);
 
-            // Find .exe asset for download
             const exeAsset = release.assets?.find(a => a.name.endsWith('.exe'));
 
             updateInfo = {
@@ -82,7 +106,6 @@ function checkForUpdates() {
 
             resolve(updateInfo);
           } else {
-            // API error or no releases yet - allow app to run
             resolve({
               currentVersion: getCurrentVersion(),
               latestVersion: getCurrentVersion(),
@@ -90,7 +113,7 @@ function checkForUpdates() {
               error: 'Could not check for updates'
             });
           }
-        } catch (e) {
+        } catch {
           resolve({
             currentVersion: getCurrentVersion(),
             latestVersion: getCurrentVersion(),
@@ -102,7 +125,6 @@ function checkForUpdates() {
     });
 
     req.on('error', () => {
-      // Network error - allow app to run
       resolve({
         currentVersion: getCurrentVersion(),
         latestVersion: getCurrentVersion(),
@@ -125,7 +147,7 @@ function checkForUpdates() {
   });
 }
 
-function createWindow() {
+function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 720,
@@ -198,7 +220,7 @@ ipcMain.handle('is-fullscreen', () => {
 });
 
 // IPC handler for opening external links
-ipcMain.on('open-external', (event, url) => {
+ipcMain.on('open-external', (_event, url: string) => {
   shell.openExternal(url);
 });
 
@@ -212,7 +234,7 @@ ipcMain.handle('get-stats', () => {
   };
 });
 
-ipcMain.handle('save-stats', (event, stats) => {
+ipcMain.handle('save-stats', (_event, stats: Partial<StoreSchema>) => {
   if (stats.highScore !== undefined) store.set('highScore', stats.highScore);
   if (stats.totalHits !== undefined) store.set('totalHits', stats.totalHits);
   if (stats.totalMisses !== undefined) store.set('totalMisses', stats.totalMisses);
@@ -220,7 +242,7 @@ ipcMain.handle('save-stats', (event, stats) => {
   return true;
 });
 
-ipcMain.handle('update-high-score', (event, score) => {
+ipcMain.handle('update-high-score', (_event, score: number) => {
   const currentHigh = store.get('highScore');
   if (score > currentHigh) {
     store.set('highScore', score);
